@@ -363,17 +363,15 @@ const isValidImageUrl = (url: string): boolean => {
 };
 
 // Enhanced Image Component with Loading State
-const ImageWithLoader: React.FC<ImageWithLoaderProps> = ({ 
-  src, 
-  alt, 
-  className, 
-  onClick, 
-  //fallbackSrc = '/image_not_available.png' 
-  fallbackSrc = 'https://placehold.co/1280x720/F0F0F0/000000?text=No+Image+Available'
-}) => {
+const ImageWithLoader: React.FC<{ 
+  src: string | null; 
+  alt: string; 
+  className: string; 
+  onClick: () => void; 
+  fallbackSrc: string; 
+}> = ({ src, alt, className, onClick, fallbackSrc = "https://placehold.co/1280x720/F0F0F0/000000?text=No+Image+Available" }) => {
   const [imageState, setImageState] = useState<'loading' | 'loaded' | 'error'>('loading');
-  const [imageSrc, setImageSrc] = useState<string>(src || fallbackSrc);
-
+  const [imageSrc, setImageSrc] = useState(src || fallbackSrc);
   useEffect(() => {
     if (src) {
       setImageState('loading');
@@ -383,38 +381,41 @@ const ImageWithLoader: React.FC<ImageWithLoaderProps> = ({
       setImageSrc(fallbackSrc);
     }
   }, [src, fallbackSrc]);
-
   const handleImageLoad = () => {
     setImageState('loaded');
   };
-
   const handleImageError = () => {
     setImageState('error');
     setImageSrc(fallbackSrc);
   };
-
   return (
-    <div className={`${className} relative overflow-hidden`}>
+    <div className={className}>
       {imageState === 'loading' && (
-        <div className={`${className} absolute inset-0 bg-gradient-to-br from-gray-200 via-gray-100 to-gray-200 animate-pulse flex items-center justify-center`}>
-          <div className="flex flex-col items-center space-y-2">
-            <div className="w-8 h-8 border-3 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
-            <span className="text-gray-500 text-xs font-medium">Loading image...</span>
-          </div>
+        <div>
+          <img
+            src={imageSrc}
+            alt={alt}
+            className="opacity-0" // Add this line to set the opacity to 0 when there is no image available
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+          />
         </div>
       )}
-      
-      <img
-        src={imageSrc}
-        alt={alt}
-        className={`${className} transition-opacity duration-300 ${imageState === 'loaded' ? 'opacity-100' : 'opacity-0'}`}
-        onClick={onClick}
-        onLoad={handleImageLoad}
-        onError={handleImageError}
-      />
-      
-      {imageState === 'loading' && (
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-shimmer transform -skew-x-12"></div>
+      {imageState === 'loaded' && (
+        <img
+          src={imageSrc}
+          alt={alt}
+          className={`opacity-100 ${className}`} // Update this line to conditionally render the Image component based on whether there is an image available
+          onClick={onClick}
+        />
+      )}
+      {imageState === 'error' && (
+        <img
+          src={fallbackSrc}
+          alt={alt}
+          className={`opacity-100 ${className}`} // Update this line to conditionally render the Image component based on whether there is an image available
+          onClick={onClick}
+        />
       )}
     </div>
   );
@@ -770,7 +771,7 @@ const BookmarkButton: React.FC<BookmarkButtonProps> = ({ articleId, bookmarks, t
 const ArticleCard: React.FC<ArticleCardProps> = ({ article, isLarge = false, bookmarks, toggleBookmark, darkMode }) => (
   <div className={`relative ${darkMode ? 'bg-gray-800' : 'bg-white'} border overflow-hidden h-full flex-grow rounded ${darkMode ? 'border-gray-700' : 'border-white'} ${isLarge ? 'md:row-span-2' : ''} group`}>
     <LazyImage
-      className={`w-full ${isLarge ? 'h-80 md:h-full' : 'h-48'} object-cover`}
+      className={`w-full ${isLarge ? 'h-80 md:h-full' : 'h-48'} object-contain`}
       src={article.image}
       videoUrl={article.link}
       title={article.title}
@@ -781,7 +782,7 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, isLarge = false, boo
     <div className="absolute top-2 left-2 bg-orange-600 text-white text-xs font-semibold px-3 py-1 rounded-full hidden">
       RSS
     </div>
-    <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+    <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity hidden">
       <BookmarkButton
         articleId={article.link}
         bookmarks={bookmarks}
