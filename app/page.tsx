@@ -525,11 +525,12 @@ const formatDuration = (milliseconds: number): string => {
 
 const Loader: React.FC = () => (
   <div className="flex items-center justify-center h-screen bg-gray-100 dark:bg-gray-900">
-    <div className="flex space-x-2 animate-pulse">
+    <div className="flex space-x-2 items-center animate-pulse">
       <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
       <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
       <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
     </div>
+    <div className="ml-2">Loading RSS</div>
   </div>
 );
 
@@ -538,7 +539,7 @@ const useInView = (options: UseInViewOptions = {}) => {
   const [entry, setEntry] = useState<IntersectionObserverEntry>();
   const elementRef = useRef<HTMLDivElement>(null);
 
-  const { threshold = 0.1, triggerOnce, rootMargin = '50px' } = options;
+  const { threshold = 0.1, triggerOnce, rootMargin = '10px' } = options;
 
   useEffect(() => {
     const element = elementRef.current;
@@ -684,7 +685,7 @@ const ArticleStats: React.FC<ArticleStatsProps> = ({ article, darkMode }) => (
       📅 {new Date(article.pubDate || Date.now()).toLocaleDateString()}
     </span>
     {article.author && (
-      <span className="flex items-center gap-1">
+      <span className="flex items-center gap-1 hidden">
         ✍️ {article.author}
       </span>
     )}
@@ -807,7 +808,7 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, isLarge = false, boo
   </div>
 );
 
-const LazyArticleItem: React.FC<LazyArticleItemProps> = ({ article, index, bookmarks, toggleBookmark, darkMode }) => {
+const LazyArticleItem: React.FC<LazyArticleItemProps> = ({ article, index, darkMode }) => {
   const { ref, inView } = useInView({
     triggerOnce: true,
     threshold: 0.1,
@@ -845,15 +846,6 @@ const LazyArticleItem: React.FC<LazyArticleItemProps> = ({ article, index, bookm
             </p>
           </div>
           <div className="flex items-center justify-between mt-4">
-            <div className="flex gap-2">
-              <BookmarkButton 
-                articleId={article.link}
-                bookmarks={bookmarks}
-                toggleBookmark={toggleBookmark}
-                darkMode={darkMode}
-              />
-              <ShareButton article={article} darkMode={darkMode} />
-            </div>
             <Link href={article.link} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors duration-300 text-center">
               Read Article
             </Link>
@@ -928,7 +920,9 @@ export default function RSSHomePage() {
   const [selectedFeed, setSelectedFeed] = useState('');
   const [feedError, setFeedError] = useState<string | null>(null);
   const { bookmarks, toggleBookmark } = useBookmarks();
-
+  const elementRef = useRef(null);
+  const [sidebarHeight, setSidebarHeight] = useState(0);
+  
   const rssFeeds: RSSFeed[] = [
     { name: 'Robin te Hofstee Blog', url:'https://blog.robintehofstee.com/feed.xml'},
     { name: 'NOS Nieuws', url:'https://feeds.nos.nl/nosnieuwsalgemeen'},
@@ -953,6 +947,17 @@ export default function RSSHomePage() {
     localStorage.setItem('darkMode', darkMode.toString());
   }, [darkMode]);
 
+
+useEffect(() => {
+    // 3. Access the element and its height after it has been rendered
+    if (elementRef.current) {
+      const height = elementRef.current.offsetHeight;
+      // Now you can use the 'height' variable
+      setSidebarHeight(height);
+      console.log('Element height:', height);
+    }
+  }, []); // The empty array ensures this runs once after the component mounts
+  
   useEffect(() => {
     const loadRSSFeed = async () => {
       setShowLoader(true);
@@ -1009,7 +1014,7 @@ export default function RSSHomePage() {
       
       <button 
         onClick={() => setDarkMode(!darkMode)}
-        className="fixed top-4 right-4 z-50 p-3 bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 rounded-full shadow-lg hover:scale-110 transition-all"
+        className="hidden fixed top-4 right-4 z-50 p-3 bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 rounded-full shadow-lg hover:scale-110 transition-all"
         title="Toggle Dark Mode"
       >
         {darkMode ? '🌞' : '🌙'}
@@ -1018,10 +1023,10 @@ export default function RSSHomePage() {
       <BackToTop darkMode={darkMode} />
 
       <div className="relative max-w-7xl mx-auto px-4 md:px-12 pt-8">
-        <div className={`mb-8 p-6 ${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg`}>
-          <h1 className={`text-3xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-            RSS Feed Reader
-          </h1>
+        <div className={`mb-8 p-6 ${darkMode ? 'bg-gray-800' : 'bg-white'} w-full rounded-lg shadow-lg flex justify-center items-center justify-between`}>
+            <div className="relative flex w-1/2 items-center">
+            <div className="relative order-2 flex flex-col start-left w-full ml-12">
+          <img className="mb-4" src="/logo_name.png" alt="name" />
           
           <FeedSelector 
             feeds={rssFeeds}
@@ -1030,7 +1035,9 @@ export default function RSSHomePage() {
             darkMode={darkMode}
           />
         </div>
-
+        <img className="order-1 relative justify-center w-48" src="/logo_without.png" alt="logo" />
+        </div>
+</div>
         {feedError ? (
           <RSSErrorDisplay 
             error={feedError}
@@ -1043,7 +1050,7 @@ export default function RSSHomePage() {
         ) : (
           <>
             <div className={`relative w-full mb-12 ${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded shadow-lg`}>
-              <h1 className={`text-xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+              <h1 className={`hidden text-xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                 <span className="border-b-2 border-red-400">Featured</span>
                 <span className={`border-b-2 ${darkMode ? 'border-gray-600' : 'border-gray-500'}`}> Articles</span>
               </h1>
@@ -1106,8 +1113,6 @@ export default function RSSHomePage() {
                           key={index} 
                           article={article} 
                           index={index}
-                          bookmarks={bookmarks}
-                          toggleBookmark={toggleBookmark}
                           darkMode={darkMode}
                         />
                       ))
@@ -1121,8 +1126,8 @@ export default function RSSHomePage() {
                   </div>
                 </div>
                 
-                <div className="relative space-y-8">
-                  <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 shadow-lg md:sticky top-8`}>
+                <div className="relative space-y-8 md:sticky top-8">
+                  <div ref={elementRef} className={`${darkMode ? 'bg-gray-800' : 'bg-white'} relative rounded-lg p-6 shadow-lg`}>
                     <h3 className={`text-lg font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                       Available Feeds
                     </h3>
@@ -1131,7 +1136,7 @@ export default function RSSHomePage() {
                         <button
                           key={index}
                           onClick={() => setSelectedFeed(feed.url)}
-                          className={`block w-full text-left p-2 rounded transition-colors ${
+                          className={`block w-full text-left p-2 rounded transition-colors cursor-pointer ${
                             selectedFeed === feed.url || (selectedFeed === '' && index === 0)
                               ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
                               : `${darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`
@@ -1143,6 +1148,9 @@ export default function RSSHomePage() {
                     </div>
                   </div>
 
+                    <div className={`relative ${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 shadow-lg`}>
+<img src="/rocket.png" alt="rocket" />
+                    </div>
                   {bookmarks.length > 0 && (
                     <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 shadow-lg`}>
                       <h2 className={`text-lg font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
